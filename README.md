@@ -127,17 +127,22 @@ TELLUS_AI_TRANSFORMERS_CACHE_DIR=./hf_cache
 
 ## Model Licensing and Usage Notes
 
-Tellus code in this repository is licensed under Apache-2.0. The Qwen model cards for `Qwen/Qwen3-Coder-Next`, `Qwen/Qwen3-14B`, and `Qwen/Qwen3-32B` currently identify the models as Apache-2.0 licensed. Before production deployment, Tellus must verify the exact upstream model card, `LICENSE`, `NOTICE`, and `README` files for the model revision actually deployed.
+Tellus proprietary code in this repository is copyright Tellus Digital, LLC.
+Unless a separate written agreement or file-level license says otherwise, the Tellus-authored code in this repository is proprietary and confidential.
+
+This repository may integrate with Apache-2.0 licensed open model artifacts, including Qwen model artifacts such as `Qwen/Qwen3-Coder-Next`, `Qwen/Qwen3-14B`, and `Qwen/Qwen3-32B`, subject to verification of the exact upstream model card, `LICENSE`, `NOTICE`, and `README` files for the model revision actually deployed.
+
+Use of upstream Apache-2.0 model artifacts does not automatically make Tellus-authored application code Apache-2.0. However, Tellus must comply with all applicable upstream license obligations when downloading, modifying, fine-tuning, deploying, or redistributing upstream model artifacts.
 
 Required operating rules:
 
 - Do not commit model weights, checkpoints, GGUF files, tokens, API keys, or local credentials.
 - Preserve upstream `LICENSE`, `NOTICE`, `README`, model cards, and attribution files with downloaded or deployed model artifacts.
-- Keep Tellus wrappers and prompts separate from upstream model code.
+- Keep Tellus wrappers, prompts, adapters, product logic, and proprietary orchestration code separate from upstream model artifacts.
+- Store upstream legal notes in `LICENSES/`.
 - Use `scripts/clone_upstream_models.sh` or documented clone/download procedures when reviewing upstream metadata.
-- Store upstream legal notes in `LICENSES/` and have counsel review commercial usage before production.
+- Have counsel review commercial usage before production deployment or redistribution.
 
-See [docs/licensing.md](docs/licensing.md) and [LICENSES/upstream-models.md](LICENSES/upstream-models.md).
 
 ## Security Notes
 
