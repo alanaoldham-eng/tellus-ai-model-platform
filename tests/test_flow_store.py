@@ -1,7 +1,7 @@
 import tempfile
 from pathlib import Path
 
-from services.api.core.flow_builder.publishing import SQLiteFlowRepository
+from services.api.core.flow_builder.publishing import LazyFlowRepository, SQLiteFlowRepository
 
 
 def test_vercel_relative_flow_store_path_uses_tmp(monkeypatch) -> None:
@@ -24,3 +24,9 @@ def test_runtime_writable_dir_overrides_relative_flow_store_path(tmp_path, monke
 
     assert repository.db_path == tmp_path / "data" / "custom_test.sqlite3"
     assert repository.db_path.exists()
+
+
+def test_lazy_repository_does_not_initialize_on_construction() -> None:
+    repository = LazyFlowRepository()
+
+    assert repository._repository is None

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
-from typing import Any
+import tempfile
 from pathlib import Path
+from typing import Any
 
 from services.api.core.config import get_settings
 from services.api.core.flow_builder.audit import AUDIT_LOG, AuditEvent
@@ -22,15 +24,38 @@ class FlowPublishError(ValueError):
 
 class SQLiteFlowRepository:
     def __init__(self, db_path: str) -> None:
-        self.db_path = Path(db_path)
-        if not self.db_path.is_absolute():
-            self.db_path = get_settings().project_root / self.db_path
-        self._ensure_schema()
+        self.db_path = self._resolve_db_path(db_path)
+        try:
+            self._ensure_schema()
+        except (OSError, sqlite3.OperationalError) as exc:
+            if not _is_read_only_filesystem_error(exc):
+                raise
+            self.db_path = self._fallback_db_path(db_path)
+            self._ensure_schema()
 
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.db_path)
         connection.row_factory = sqlite3.Row
         return connection
+
+    def _resolve_db_path(self, db_path: str) -> Path:
+        path = Path(db_path)
+        if path.is_absolute():
+            return path
+
+        runtime_writable_dir = os.environ.get("TELLUS_AI_RUNTIME_WRITABLE_DIR")
+        if runtime_writable_dir:
+            return Path(runtime_writable_dir) / path
+
+        if os.environ.get("VERCEL") or os.environ.get("VERCEL_ENV"):
+            return self._fallback_db_path(db_path)
+
+        return get_settings().project_root / path
+
+    @staticmethod
+    def _fallback_db_path(db_path: str) -> Path:
+        filename = Path(db_path).name or "flow_builder.sqlite3"
+        return Path(tempfile.gettempdir()) / "tellus_ai_model_platform" / filename
 
     def _ensure_schema(self) -> None:
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
@@ -268,7 +293,65 @@ class SQLiteFlowRepository:
             )
 
 
-FLOW_REPOSITORY = SQLiteFlowRepository(get_settings().flow_store_path)
+class LazyFlowRepository:
+    """Defer SQLite initialization until persistence is actually used.
+
+    Vercel imports the FastAPI module before invoking a route. Keeping filesystem setup out of
+    module import prevents unrelated requests, docs, health checks, and favicon probes from crashing
+    because the persistence layer cannot initialize.
+    """
+
+    def __init__(self) -> None:
+        self._repository: SQLiteFlowRepository | None = None
+
+    @property
+    def db_path(self) -> Path:
+        return self._get_repository().db_path
+
+    def _get_repository(self) -> SQLiteFlowRepository:
+        if self._repository is None:
+            self._repository = SQLiteFlowRepository(get_settings().flow_store_path)
+        return self._repository
+
+    def save_draft(self, flow: FlowDefinition, actor: str = "flow_builder") -> FlowDefinition:
+        return self._get_repository().save_draft(flow, actor)
+
+    def get_flow(self, flow_id: str, tenant_id: str | None = None) -> FlowDefinition | None:
+        return self._get_repository().get_flow(flow_id, tenant_id)
+
+    def versions(self, flow_id: str, tenant_id: str | None = None) -> list[FlowVersionRecord]:
+        return self._get_repository().versions(flow_id, tenant_id)
+
+    def audit_events(self, flow_id: str, tenant_id: str | None = None) -> list[AuditEvent]:
+        return self._get_repository().audit_events(flow_id, tenant_id)
+
+    def append_audit(
+        self,
+        flow_id: str,
+        event_type: str,
+        actor: str,
+        metadata: dict[str, Any] | None = None,
+        tenant_id: str | None = None,
+    ) -> AuditEvent:
+        return self._get_repository().append_audit(
+            flow_id=flow_id,
+            event_type=event_type,
+            actor=actor,
+            metadata=metadata,
+            tenant_id=tenant_id,
+        )
+
+    def publish(
+        self,
+        flow: FlowDefinition,
+        review_approved: bool,
+        reviewed_by: str,
+        review_notes: str | None = None,
+    ) -> FlowDefinition:
+        return self._get_repository().publish(flow, review_approved, reviewed_by, review_notes)
+
+
+FLOW_REPOSITORY = LazyFlowRepository()
 
 
 def flow_response_with_audit(flow: FlowDefinition, tenant_id: str | None = None) -> dict[str, Any]:
@@ -279,3 +362,8 @@ def flow_response_with_audit(flow: FlowDefinition, tenant_id: str | None = None)
             for event in FLOW_REPOSITORY.audit_events(flow.flow_id, tenant_id=tenant_id)
         ],
     }
+
+
+def _is_read_only_filesystem_error(exc: BaseException) -> bool:
+    message = str(exc).lower()
+    return "read-only file system" in message or "readonly" in message or "unable to open database" in message
