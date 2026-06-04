@@ -197,8 +197,19 @@ def flow_builder_demo_page() -> str:
 
             <div class="workbench-grid">
               <form class="demo-form" id="demo-form">
+                <div class="builder-stage">
+                  <span>1</span>
+                  <div>
+                    <h3>Describe the workflow</h3>
+                    <p>Use natural language, then refine it with the builder controls below.</p>
+                  </div>
+                </div>
+
                 <label for="demo-prompt">Workflow prompt</label>
-                <textarea id="demo-prompt" name="prompt" rows="9" maxlength="2000">Create a consumer checking account onboarding flow. Ask for identity, address, contact details, employment, funding source, disclosures, and upload ID. If the customer is under 18, route to manual review. Connect to our KYC API before final submission.</textarea>
+                <textarea id="demo-prompt" name="prompt" rows="8" maxlength="2000">Create a consumer checking account onboarding flow. Ask for identity, address, contact details, employment, funding source, disclosures, and upload ID. If the customer is under 18, route to manual review. If the customer is not a US citizen, show residency questions. Connect to our KYC API before final submission.</textarea>
+
+                <label for="flow-name">Demo flow name</label>
+                <input id="flow-name" name="flow_name" value="Website demo onboarding flow" />
 
                 <label for="target-flow-type">Target flow type</label>
                 <select id="target-flow-type" name="target_flow_type">
@@ -214,9 +225,32 @@ def flow_builder_demo_page() -> str:
                   <button type="button" data-example="Create a consumer checking account flow with identity, address, contact details, employment, funding source, disclosures, document upload, KYC check, and manual review for minors.">Consumer checking</button>
                 </div>
 
-                <button class="button button-primary" type="submit">Generate Demo Draft</button>
+                <fieldset>
+                  <legend>2. Choose form modules</legend>
+                  <label><input type="checkbox" data-builder="include_identity" checked /> Identity and verification</label>
+                  <label><input type="checkbox" data-builder="include_contact" checked /> Contact information</label>
+                  <label><input type="checkbox" data-builder="include_address" checked /> Address or housing</label>
+                  <label><input type="checkbox" data-builder="include_employment_income" checked /> Employment or income</label>
+                  <label><input type="checkbox" data-builder="include_funding_source" checked /> Funding, activity, or requested amount</label>
+                  <label><input type="checkbox" data-builder="include_documents" checked /> Document upload</label>
+                  <label><input type="checkbox" data-builder="include_disclosures" checked /> Disclosures and consent</label>
+                  <label><input type="checkbox" data-builder="include_api_connectors" checked /> API connector placeholders</label>
+                </fieldset>
+
+                <fieldset>
+                  <legend>3. Add conditional logic</legend>
+                  <label><input type="checkbox" data-builder="show_residency_for_non_us" checked /> If citizenship is not US Citizen, show residency questions</label>
+                  <label><input type="checkbox" data-builder="route_minors_to_manual_review" checked /> If applicant age is below threshold, route to manual review</label>
+                  <label for="minor-age-threshold">Minor review threshold</label>
+                  <input id="minor-age-threshold" type="number" min="0" max="25" value="18" />
+                  <label><input type="checkbox" data-builder="collect_beneficial_owners_for_legal_entities" checked /> If business entity requires it, collect beneficial owners</label>
+                  <label><input type="checkbox" data-builder="require_human_review" /> Always require human review before final submit</label>
+                </fieldset>
+
+                <button class="button button-primary" type="submit">Generate Conditional Flow</button>
                 <p class="form-note">
-                  Demo output is draft-only and must be reviewed before any production use.
+                  The generated flow is draft-only. It can be tested here, but publishing still
+                  requires protected API access and human approval.
                 </p>
               </form>
 
@@ -245,6 +279,92 @@ def flow_builder_demo_page() -> str:
                   <ul class="risk-list" id="generated-risks"></ul>
                 </article>
               </div>
+            </div>
+
+            <div class="test-workbench" aria-labelledby="test-workbench-title">
+              <div class="section-heading">
+                <p class="eyebrow">Test Runner</p>
+                <h2 id="test-workbench-title">Fill sample answers and test the generated flow.</h2>
+                <p>
+                  Use scenarios or edit individual answers. The tester evaluates conditional
+                  visibility, manual review routing, validation, and mock API actions from the
+                  generated JSON.
+                </p>
+              </div>
+
+              <div class="workbench-grid">
+                <form class="demo-form" id="test-form">
+                  <div class="scenario-row" aria-label="Scenario shortcuts">
+                    <button type="button" data-scenario="adult_us">Adult US applicant</button>
+                    <button type="button" data-scenario="minor">Minor applicant</button>
+                    <button type="button" data-scenario="non_us">Non-US residency</button>
+                    <button type="button" data-scenario="llc">LLC beneficial owners</button>
+                  </div>
+
+                  <div class="answer-grid">
+                    <label for="test-citizenship">Citizenship status</label>
+                    <select id="test-citizenship" data-answer="citizenship_status">
+                      <option>US Citizen</option>
+                      <option>Permanent Resident</option>
+                      <option>Visa Holder</option>
+                      <option>Other</option>
+                    </select>
+
+                    <label for="test-age">Applicant age</label>
+                    <input id="test-age" data-answer="applicant_age" type="number" value="34" />
+
+                    <label for="test-business-entity">Business entity type</label>
+                    <select id="test-business-entity" data-answer="business_entity_type">
+                      <option>LLC</option>
+                      <option>Corporation</option>
+                      <option>Partnership</option>
+                      <option>Sole Proprietorship</option>
+                    </select>
+
+                    <label for="test-consent">Credit pull consent</label>
+                    <select id="test-consent" data-answer="credit_pull_consent">
+                      <option value="true">Yes</option>
+                      <option value="false">No</option>
+                    </select>
+
+                    <label for="test-certification">Final certification</label>
+                    <select id="test-certification" data-answer="application_certification">
+                      <option value="true">Signed</option>
+                      <option value="false">Not signed</option>
+                    </select>
+                  </div>
+
+                  <button class="button button-primary" type="submit">Run Flow Test</button>
+                  <p class="form-note">
+                    The tester automatically fills ordinary required fields with sample values, then
+                    applies the scenario answers above.
+                  </p>
+                </form>
+
+                <div class="demo-results">
+                  <article class="result-panel">
+                    <p class="eyebrow">Simulation Result</p>
+                    <h3 id="simulation-status">Generate a flow first</h3>
+                    <p id="simulation-routing">Routing decision will appear here.</p>
+                    <div class="pill-row" id="simulation-actions"></div>
+                  </article>
+
+                  <article class="result-panel">
+                    <p class="eyebrow">Visible Steps</p>
+                    <ol class="step-list" id="simulation-steps"></ol>
+                  </article>
+
+                  <article class="result-panel">
+                    <p class="eyebrow">Validation and API Calls</p>
+                    <ul class="risk-list" id="simulation-notes"></ul>
+                  </article>
+                </div>
+              </div>
+
+              <article class="result-panel json-panel">
+                <p class="eyebrow">Generated JSON Contract</p>
+                <pre><code id="json-preview">Generate a draft to inspect the portable workflow JSON.</code></pre>
+              </article>
             </div>
           </section>
 
@@ -348,9 +468,13 @@ def _endpoint_card(method: str, path: str, description: str) -> str:
 def _demo_script() -> str:
     return """
         <script>
+          let currentFlow = null;
+
           const form = document.querySelector("#demo-form");
+          const testForm = document.querySelector("#test-form");
           const promptInput = document.querySelector("#demo-prompt");
           const flowTypeInput = document.querySelector("#target-flow-type");
+          const flowNameInput = document.querySelector("#flow-name");
           const statusLine = document.querySelector("#demo-status");
           const title = document.querySelector("#result-title");
           const message = document.querySelector("#result-message");
@@ -358,6 +482,12 @@ def _demo_script() -> str:
           const signals = document.querySelector("#detected-signals");
           const steps = document.querySelector("#generated-steps");
           const risks = document.querySelector("#generated-risks");
+          const jsonPreview = document.querySelector("#json-preview");
+          const simulationStatus = document.querySelector("#simulation-status");
+          const simulationRouting = document.querySelector("#simulation-routing");
+          const simulationActions = document.querySelector("#simulation-actions");
+          const simulationSteps = document.querySelector("#simulation-steps");
+          const simulationNotes = document.querySelector("#simulation-notes");
 
           function setStatus(text, isError = false) {
             statusLine.textContent = text;
@@ -422,15 +552,18 @@ def _demo_script() -> str:
           function renderResult(data) {
             clearNode(metrics);
             if (data.blocked) {
+              currentFlow = null;
               title.textContent = "Demo request blocked";
               message.textContent = data.message;
               renderPills(signals, data.safety_flags || []);
               clearNode(steps);
               renderRisks(data.safety_flags || []);
+              jsonPreview.textContent = "No JSON generated because the request was blocked.";
               setStatus("Safety review required before a flow can be generated.", true);
               return;
             }
 
+            currentFlow = data.flow_json;
             title.textContent = data.selected_template.name;
             message.textContent = data.message + " " + data.selected_template.reason;
             appendMetric(" steps", data.summary.step_count);
@@ -440,7 +573,114 @@ def _demo_script() -> str:
             renderPills(signals, data.interpreted_request.detected_workflow_signals);
             renderSteps(data.flow_json);
             renderRisks(data.risk_flags);
+            jsonPreview.textContent = JSON.stringify(data.flow_json, null, 2);
             setStatus("Demo draft generated. Review the structure before using protected APIs.");
+          }
+
+          function collectBuilderOptions() {
+            const options = { flow_name: flowNameInput.value };
+            document.querySelectorAll("[data-builder]").forEach((field) => {
+              options[field.dataset.builder] = field.checked;
+            });
+            options.minor_age_threshold = Number(
+              document.querySelector("#minor-age-threshold").value || 18
+            );
+            return options;
+          }
+
+          function defaultValueForField(field) {
+            const id = field.field_id;
+            if (id.includes("age")) return 34;
+            if (id.includes("ssn_last4")) return "1234";
+            if (id.includes("email")) return "demo@example.com";
+            if (id.includes("phone")) return "555-0100";
+            if (id.includes("date")) return "1990-01-01";
+            if (field.type === "checkbox" || field.type === "consent_checkbox") return true;
+            if (field.type === "disclosure_acknowledgment") return true;
+            if (field.type === "number") return 1;
+            if (field.type === "currency") return 75000;
+            if (field.type === "file_upload") return "demo-upload.pdf";
+            if (field.type === "address") return "100 Demo Street, New Orleans, LA";
+            if (field.type === "beneficial_owner") return "Jane Demo, 30 percent owner";
+            if (field.options && field.options.length > 0) return field.options[0].value;
+            return "demo value";
+          }
+
+          function baseAnswers(flow) {
+            const answers = {};
+            flow.steps.forEach((step) => {
+              step.fields.forEach((field) => {
+                answers[field.field_id] = defaultValueForField(field);
+              });
+              step.sections.forEach((section) => {
+                section.fields.forEach((field) => {
+                  answers[field.field_id] = defaultValueForField(field);
+                });
+              });
+            });
+            return answers;
+          }
+
+          function parseAnswerValue(value) {
+            if (value === "true") return true;
+            if (value === "false") return false;
+            if (!Number.isNaN(Number(value)) && value.trim() !== "") return Number(value);
+            return value;
+          }
+
+          function collectTestAnswers() {
+            const answers = baseAnswers(currentFlow);
+            document.querySelectorAll("[data-answer]").forEach((field) => {
+              answers[field.dataset.answer] = parseAnswerValue(field.value);
+            });
+            return answers;
+          }
+
+          function setScenario(name) {
+            const citizenship = document.querySelector("#test-citizenship");
+            const age = document.querySelector("#test-age");
+            const businessEntity = document.querySelector("#test-business-entity");
+            const consent = document.querySelector("#test-consent");
+            const certification = document.querySelector("#test-certification");
+            citizenship.value = "US Citizen";
+            age.value = "34";
+            businessEntity.value = "Sole Proprietorship";
+            consent.value = "true";
+            certification.value = "true";
+            if (name === "minor") age.value = "17";
+            if (name === "non_us") citizenship.value = "Permanent Resident";
+            if (name === "llc") businessEntity.value = "LLC";
+          }
+
+          function renderSimulation(data) {
+            simulationStatus.textContent = data.final_status.replaceAll("_", " ");
+            simulationRouting.textContent = `Routing decision: ${data.routing_decision}`;
+            renderPills(
+              simulationActions,
+              data.triggered_actions.map((action) => action.action_id)
+            );
+            clearNode(simulationSteps);
+            data.visible_step_titles.forEach((titleText, index) => {
+              const item = document.createElement("li");
+              const badge = document.createElement("span");
+              badge.textContent = index + 1;
+              item.appendChild(badge);
+              item.appendChild(document.createTextNode(titleText));
+              simulationSteps.appendChild(item);
+            });
+            clearNode(simulationNotes);
+            const notes = [
+              ...data.validation_errors.slice(0, 8),
+              ...data.api_calls.map((call) => `API mock: ${call.connector_id}`),
+            ];
+            if (notes.length === 0) {
+              notes.push("No validation errors. Mock API actions are listed when triggered.");
+            }
+            notes.forEach((note) => {
+              const item = document.createElement("li");
+              item.textContent = note;
+              simulationNotes.appendChild(item);
+            });
           }
 
           document.querySelectorAll("[data-example]").forEach((button) => {
@@ -460,6 +700,7 @@ def _demo_script() -> str:
                 body: JSON.stringify({
                   prompt: promptInput.value,
                   target_flow_type: flowTypeInput.value || null,
+                  builder_options: collectBuilderOptions(),
                 }),
               });
               if (!response.ok) {
@@ -471,6 +712,42 @@ def _demo_script() -> str:
                 "The demo could not generate a draft. Refresh and try again, or open API docs.",
                 true
               );
+            }
+          });
+
+          document.querySelectorAll("[data-scenario]").forEach((button) => {
+            button.addEventListener("click", () => setScenario(button.dataset.scenario));
+          });
+
+          testForm.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            if (!currentFlow) {
+              simulationStatus.textContent = "Generate a flow before testing.";
+              simulationRouting.textContent = "No routing decision yet.";
+              return;
+            }
+            simulationStatus.textContent = "Running simulation...";
+            try {
+              const response = await fetch("/flow-builder/demo/simulate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  flow_json: currentFlow,
+                  test_answers: collectTestAnswers(),
+                  mock_api_responses: {
+                    kyc_placeholder: { status: "mock_pass" },
+                    kyb_placeholder: { status: "mock_review" },
+                    credit_bureau_placeholder: { score_band: "mock_prime" },
+                  },
+                }),
+              });
+              if (!response.ok) {
+                throw new Error(`Simulation endpoint returned ${response.status}`);
+              }
+              renderSimulation(await response.json());
+            } catch (error) {
+              simulationStatus.textContent = "Simulation failed";
+              simulationRouting.textContent = "Refresh and try again.";
             }
           });
         </script>
@@ -852,6 +1129,7 @@ def _front_end_styles() -> str:
           }
 
           .demo-form textarea,
+          .demo-form input,
           .demo-form select {
             width: 100%;
             border: 1px solid var(--line);
@@ -867,14 +1145,74 @@ def _front_end_styles() -> str:
             resize: vertical;
           }
 
+          .demo-form fieldset {
+            display: grid;
+            gap: 10px;
+            margin: 0;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 14px;
+          }
+
+          .demo-form legend {
+            color: var(--accent-strong);
+            font-size: 0.9rem;
+            font-weight: 850;
+            padding: 0 6px;
+          }
+
+          .demo-form fieldset label {
+            display: flex;
+            gap: 8px;
+            align-items: flex-start;
+            color: var(--muted);
+            font-size: 0.94rem;
+            font-weight: 650;
+          }
+
+          .demo-form input[type="checkbox"] {
+            width: auto;
+            margin-top: 4px;
+          }
+
+          .builder-stage {
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            border-bottom: 1px solid var(--line);
+            padding-bottom: 14px;
+          }
+
+          .builder-stage span {
+            display: grid;
+            flex: 0 0 32px;
+            width: 32px;
+            height: 32px;
+            place-items: center;
+            border-radius: 50%;
+            background: #e6f0eb;
+            color: var(--accent-strong);
+            font-weight: 850;
+          }
+
+          .builder-stage h3 {
+            margin-bottom: 4px;
+          }
+
+          .builder-stage p {
+            margin-bottom: 0;
+          }
+
           .prompt-examples,
-          .pill-row {
+          .pill-row,
+          .scenario-row {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
           }
 
           .prompt-examples button,
+          .scenario-row button,
           .pill-row span {
             border: 1px solid var(--line);
             border-radius: 999px;
@@ -887,6 +1225,10 @@ def _front_end_styles() -> str:
           }
 
           .prompt-examples button {
+            cursor: pointer;
+          }
+
+          .scenario-row button {
             cursor: pointer;
           }
 
@@ -919,6 +1261,32 @@ def _front_end_styles() -> str:
           .compact-metrics {
             grid-template-columns: repeat(4, minmax(0, 1fr));
             margin-bottom: 0;
+          }
+
+          .test-workbench {
+            margin-top: 36px;
+            border-top: 1px solid var(--line);
+            padding-top: 36px;
+          }
+
+          .answer-grid {
+            display: grid;
+            grid-template-columns: minmax(130px, 0.45fr) minmax(0, 0.55fr);
+            gap: 10px 12px;
+            align-items: center;
+          }
+
+          .answer-grid label {
+            color: var(--muted);
+          }
+
+          .json-panel {
+            margin-top: 18px;
+          }
+
+          .json-panel pre {
+            max-height: 420px;
+            box-shadow: none;
           }
 
           .template-card {
@@ -995,6 +1363,10 @@ def _front_end_styles() -> str:
 
             .metric-row {
               grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .answer-grid {
+              grid-template-columns: 1fr;
             }
           }
 

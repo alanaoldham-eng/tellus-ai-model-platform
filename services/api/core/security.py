@@ -18,6 +18,7 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
             "/",
             "/flow-builder/demo",
             "/flow-builder/demo/generate",
+            "/flow-builder/demo/simulate",
             "/health",
             "/docs",
             "/openapi.json",

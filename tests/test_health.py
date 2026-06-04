@@ -36,7 +36,8 @@ def test_flow_builder_demo_page_is_public() -> None:
     assert response.status_code == 200
     assert "Tellus FlowBuilder Demo" in response.text
     assert "demo-form" in response.text
-    assert "Generate Demo Draft" in response.text
+    assert "Generate Conditional Flow" in response.text
+    assert "Run Flow Test" in response.text
     assert "Consumer Checking Account Onboarding" in response.text
     assert "No API keys in browser code" in response.text
 
@@ -48,7 +49,11 @@ def test_flow_builder_public_demo_generate_is_mock_only() -> None:
             "prompt": (
                 "Create a small business onboarding flow with KYB, beneficial owners, "
                 "documents, disclosures, OFAC, and manual review."
-            )
+            ),
+            "builder_options": {
+                "flow_name": "Demo small business flow",
+                "require_human_review": True,
+            },
         },
     )
 
@@ -57,8 +62,41 @@ def test_flow_builder_public_demo_generate_is_mock_only() -> None:
     assert body["mode"] == "mock_public_demo"
     assert body["blocked"] is False
     assert body["selected_template"]["flow_type"] == "small_business_deposit_account_opening"
+    assert body["flow_json"]["name"] == "Demo Draft: Demo small business flow"
     assert body["flow_json"]["status"] == "draft"
     assert "secret/tellus" not in response.text
+
+
+def test_flow_builder_public_demo_simulates_conditional_flow() -> None:
+    generate_response = client.post(
+        "/flow-builder/demo/generate",
+        json={
+            "prompt": "Create a checking account flow with KYC and manual review for minors.",
+            "target_flow_type": "consumer_deposit_account_opening",
+        },
+    )
+    flow_json = generate_response.json()["flow_json"]
+
+    simulate_response = client.post(
+        "/flow-builder/demo/simulate",
+        json={
+            "flow_json": flow_json,
+            "test_answers": {
+                "citizenship_status": "US Citizen",
+                "applicant_age": 17,
+                "ssn_last4": "1234",
+                "deposit_account_disclosure_ack": True,
+                "esign_consent": True,
+                "privacy_notice_ack": True,
+            },
+        },
+    )
+
+    assert simulate_response.status_code == 200
+    body = simulate_response.json()
+    assert body["mode"] == "mock_public_demo"
+    assert body["final_status"] in {"manual_review", "incomplete"}
+    assert "Eligibility" in body["visible_step_titles"]
 
 
 def test_favicon_is_public() -> None:
