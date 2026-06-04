@@ -1,10 +1,10 @@
 import json
 from functools import lru_cache
 from pathlib import Path
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -38,12 +38,12 @@ class Settings(BaseSettings):
         validation_alias="TELLUS_AI_ENABLE_FINE_TUNING",
     )
     log_level: str = Field(default="info", validation_alias="TELLUS_AI_LOG_LEVEL")
-    allowed_origins: list[str] = Field(
+    allowed_origins: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["http://localhost:3000"],
         validation_alias="TELLUS_AI_ALLOWED_ORIGINS",
     )
     api_key: str = Field(default="replace_me", validation_alias="TELLUS_AI_API_KEY")
-    tenant_api_keys: dict[str, str] = Field(
+    tenant_api_keys: Annotated[dict[str, str], NoDecode] = Field(
         default_factory=dict,
         validation_alias="TELLUS_AI_TENANT_API_KEYS",
     )
