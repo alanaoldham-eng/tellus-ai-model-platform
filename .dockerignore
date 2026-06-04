@@ -16,6 +16,7 @@ hf_cache
 gguf
 upstream
 logs
+data
 *.safetensors
 *.bin
 *.gguf
@@ -24,4 +25,3 @@ logs
 *.ckpt
 *.onnx
 *.log
-

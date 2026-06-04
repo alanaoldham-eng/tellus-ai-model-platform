@@ -1,5 +1,7 @@
+import json
 from functools import lru_cache
 from pathlib import Path
+from typing import Any
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -41,6 +43,14 @@ class Settings(BaseSettings):
         validation_alias="TELLUS_AI_ALLOWED_ORIGINS",
     )
     api_key: str = Field(default="replace_me", validation_alias="TELLUS_AI_API_KEY")
+    tenant_api_keys: dict[str, str] = Field(
+        default_factory=dict,
+        validation_alias="TELLUS_AI_TENANT_API_KEYS",
+    )
+    require_tenant_header: bool = Field(
+        default=False,
+        validation_alias="TELLUS_AI_REQUIRE_TENANT_HEADER",
+    )
     enable_prompt_logging: bool = Field(
         default=False,
         validation_alias="TELLUS_AI_ENABLE_PROMPT_LOGGING",
@@ -103,6 +113,10 @@ class Settings(BaseSettings):
         validation_alias="TELLUS_AI_TRANSFORMERS_CACHE_DIR",
     )
     hf_token: str | None = Field(default=None, validation_alias="HF_TOKEN")
+    flow_store_path: str = Field(
+        default="./data/flow_builder.sqlite3",
+        validation_alias="TELLUS_AI_FLOW_STORE_PATH",
+    )
 
     @field_validator("allowed_origins", mode="before")
     @classmethod
@@ -110,6 +124,36 @@ class Settings(BaseSettings):
         if isinstance(value, str):
             return [origin.strip() for origin in value.split(",") if origin.strip()]
         return value
+
+    @field_validator("tenant_api_keys", mode="before")
+    @classmethod
+    def parse_tenant_api_keys(cls, value: str | dict[str, str] | None) -> dict[str, str]:
+        if value is None or value == "":
+            return {}
+        if isinstance(value, dict):
+            return {str(key): str(item) for key, item in value.items() if str(key) and str(item)}
+        parsed: Any
+        try:
+            parsed = json.loads(value)
+            if isinstance(parsed, dict):
+                return {
+                    str(key): str(item)
+                    for key, item in parsed.items()
+                    if str(key) and str(item)
+                }
+        except json.JSONDecodeError:
+            pass
+
+        tenant_keys: dict[str, str] = {}
+        for pair in value.split(","):
+            if ":" not in pair:
+                continue
+            tenant_id, api_key = pair.split(":", 1)
+            tenant_id = tenant_id.strip()
+            api_key = api_key.strip()
+            if tenant_id and api_key:
+                tenant_keys[tenant_id] = api_key
+        return tenant_keys
 
     @field_validator("inference_backend", mode="before")
     @classmethod

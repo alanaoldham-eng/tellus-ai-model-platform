@@ -1,8 +1,6 @@
-# License Ledger
+## Repository License
 
-This directory documents upstream model licensing notes and must be updated for every production
-model revision Tellus deploys.
+Tellus-authored source code, prompts, adapters, orchestration logic, product workflows, documentation, and configuration in this repository are proprietary and confidential unless a specific file says otherwise.
 
-Do not treat this directory as a substitute for preserving the exact upstream `LICENSE`, `NOTICE`,
-`README`, model card, and attribution files shipped with a downloaded model artifact.
+Third-party open-source software, model artifacts, dependencies, and upstream materials remain governed by their own licenses. Those notices are tracked in `LICENSES/`, dependency manifests, model cards, and upstream repositories.
 

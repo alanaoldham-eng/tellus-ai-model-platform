@@ -1,4 +1,5 @@
 from collections.abc import Awaitable, Callable
+from secrets import compare_digest
 
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
@@ -28,11 +29,36 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
         if authorization.lower().startswith("bearer "):
             supplied_key = authorization[7:].strip()
 
-        if not supplied_key or supplied_key != self.settings.api_key:
+        tenant_header = request.headers.get("x-tellus-tenant-id")
+        tenant_match = self._tenant_for_key(supplied_key or "")
+        global_match = bool(supplied_key) and compare_digest(supplied_key, self.settings.api_key)
+
+        if tenant_header and tenant_match and tenant_header != tenant_match:
+            return JSONResponse(
+                status_code=403,
+                content={"detail": "Tenant API key does not match X-Tellus-Tenant-Id."},
+            )
+
+        if tenant_match:
+            request.state.tenant_id = tenant_match
+        elif global_match:
+            request.state.tenant_id = tenant_header
+        else:
             return JSONResponse(
                 status_code=401,
                 content={"detail": "Missing or invalid API key."},
             )
 
+        if self.settings.require_tenant_header and not getattr(request.state, "tenant_id", None):
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "X-Tellus-Tenant-Id is required."},
+            )
+
         return await call_next(request)
 
+    def _tenant_for_key(self, supplied_key: str) -> str | None:
+        for tenant_id, tenant_key in self.settings.tenant_api_keys.items():
+            if compare_digest(supplied_key, tenant_key):
+                return tenant_id
+        return None

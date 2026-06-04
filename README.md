@@ -56,7 +56,7 @@ General chat:
 curl -X POST http://127.0.0.1:8000/chat `
   -H "Content-Type: application/json" `
   -H "X-API-Key: replace_me" `
-  -d "{\"message\":\"Draft a concise onboarding note for Tellus Gateway.\",\"product_context\":\"Tellus Gateway\"}"
+  -d "{\"message\":\"Draft a concise onboarding note for Tellus BankBridge.\",\"product_context\":\"Tellus BankBridge\"}"
 ```
 
 Code agent:
@@ -127,6 +127,12 @@ TELLUS_AI_TRANSFORMERS_CACHE_DIR=./hf_cache
 
 ## Model Licensing and Usage Notes
 
+## Repository License
+
+Tellus-authored source code, prompts, adapters, orchestration logic, product workflows, documentation, and configuration in this repository are proprietary and confidential unless a specific file says otherwise.
+
+Third-party open-source software, model artifacts, dependencies, and upstream materials remain governed by their own licenses. Those notices are tracked in `LICENSES/`, dependency manifests, model cards, and upstream repositories.
+
 Tellus proprietary code in this repository is copyright Tellus Digital, LLC.
 Unless a separate written agreement or file-level license says otherwise, the Tellus-authored code in this repository is proprietary and confidential.
 
@@ -158,6 +164,7 @@ Tellus products should call this service as an internal API. Product-specific co
 
 Initial product targets:
 
+- Tellus BankBridge
 - CAPIT
 - Human Layer / Work OS
 - Tellus Comply
@@ -165,7 +172,7 @@ Initial product targets:
 - Tellus Sign
 - Tellus Gateway
 
-`LesBiGulfFriends.com` is excluded until explicitly enabled later.
+
 
 ## Roadmap
 

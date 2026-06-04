@@ -16,6 +16,7 @@ services:
     volumes:
       - ./prompts:/app/prompts:ro
       - ./models:/app/models
+      - ./data:/app/data
     command: uvicorn services.api.main:app --host 0.0.0.0 --port 8000
 
   ollama:
@@ -44,4 +45,3 @@ services:
 
 volumes:
   ollama-data:
-

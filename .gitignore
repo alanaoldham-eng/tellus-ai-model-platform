@@ -57,6 +57,10 @@ temp/
 generated/
 artifacts/
 reports/generated/
+data/
+*.sqlite
+*.sqlite3
+*.db
 
 # Node/editor/OS noise
 node_modules/
@@ -66,4 +70,3 @@ Thumbs.db
 .vscode/*
 !.vscode/extensions.json
 !.vscode/settings.json
-
