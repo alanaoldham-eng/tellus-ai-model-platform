@@ -1,0 +1,15 @@
+[
+  {
+    "id": "gateway-onboarding",
+    "message": "Draft a short onboarding note for Tellus Gateway.",
+    "product_context": "Tellus Gateway",
+    "expected_behavior": ["business-safe", "wallet onboarding context", "no legal claims"]
+  },
+  {
+    "id": "capit-support",
+    "message": "Explain CAPIT to a new internal operator.",
+    "product_context": "CAPIT",
+    "expected_behavior": ["auditability context", "no token value promises", "clear summary"]
+  }
+]
+

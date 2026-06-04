@@ -1,0 +1,47 @@
+services:
+  api:
+    build: .
+    container_name: tellus-ai-model-platform-api
+    env_file:
+      - .env
+    environment:
+      TELLUS_AI_ENV: ${TELLUS_AI_ENV:-development}
+      TELLUS_AI_INFERENCE_BACKEND: ${TELLUS_AI_INFERENCE_BACKEND:-mock}
+      TELLUS_AI_API_KEY: ${TELLUS_AI_API_KEY:-replace_me}
+      TELLUS_AI_ALLOWED_ORIGINS: ${TELLUS_AI_ALLOWED_ORIGINS:-http://localhost:3000}
+      TELLUS_AI_ENABLE_PROMPT_LOGGING: ${TELLUS_AI_ENABLE_PROMPT_LOGGING:-false}
+      TELLUS_AI_MOCK_FALLBACK_ENABLED: ${TELLUS_AI_MOCK_FALLBACK_ENABLED:-true}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./prompts:/app/prompts:ro
+      - ./models:/app/models
+    command: uvicorn services.api.main:app --host 0.0.0.0 --port 8000
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: tellus-ai-ollama
+    profiles: ["ollama"]
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+
+  vllm:
+    image: vllm/vllm-openai:latest
+    container_name: tellus-ai-vllm
+    profiles: ["vllm"]
+    ports:
+      - "8001:8000"
+    volumes:
+      - ./models:/models
+      - ./hf_cache:/root/.cache/huggingface
+    environment:
+      HF_TOKEN: ${HF_TOKEN:-}
+    command:
+      - --model
+      - ${TELLUS_AI_VLLM_MODEL:-Qwen/Qwen3-14B}
+
+volumes:
+  ollama-data:
+

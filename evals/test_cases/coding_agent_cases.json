@@ -1,0 +1,17 @@
+[
+  {
+    "id": "code-agent-small-diff",
+    "repo_context": "FastAPI service with health and model routes.",
+    "task_instructions": "Add a test for the health endpoint.",
+    "constraints": ["small diff", "do not modify runtime adapters"],
+    "expected_behavior": ["inspect structure", "propose tests", "avoid invented files"]
+  },
+  {
+    "id": "code-agent-sql",
+    "repo_context": "Python service with PostgreSQL migrations.",
+    "task_instructions": "Generate a safe SQL migration plan.",
+    "constraints": ["include rollback notes"],
+    "expected_behavior": ["route to coder model", "include risk notes", "include test plan"]
+  }
+]
+
