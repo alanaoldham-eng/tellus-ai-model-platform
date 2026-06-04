@@ -21,6 +21,20 @@ def test_health_returns_status() -> None:
     assert "code_agent" in body["enabled_model_roles"]
 
 
+def test_root_page_is_public() -> None:
+    response = client.get("/")
+
+    assert response.status_code == 200
+    assert "Tellus AI Model Platform" in response.text
+    assert "X-API-Key" in response.text
+
+
+def test_favicon_is_public() -> None:
+    response = client.get("/favicon.ico")
+
+    assert response.status_code == 204
+
+
 def test_models_requires_api_key() -> None:
     response = client.get("/models")
 
@@ -70,4 +84,3 @@ def test_code_agent_works_with_mock_adapter() -> None:
     assert body["files_touched"] == []
     assert "mock_response" in body["safety_flags"]
     assert body["proposed_changes"]
-

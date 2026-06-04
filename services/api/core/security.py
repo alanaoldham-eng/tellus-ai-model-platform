@@ -14,7 +14,15 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, settings: Settings) -> None:  # type: ignore[no-untyped-def]
         super().__init__(app)
         self.settings = settings
-        self.exempt_paths = {"/health", "/docs", "/openapi.json", "/redoc"}
+        self.exempt_paths = {
+            "/",
+            "/health",
+            "/docs",
+            "/openapi.json",
+            "/redoc",
+            "/favicon.ico",
+            "/favicon.png",
+        }
 
     async def dispatch(
         self,
