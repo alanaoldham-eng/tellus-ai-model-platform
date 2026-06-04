@@ -25,14 +25,30 @@ def test_root_page_is_public() -> None:
     response = client.get("/")
 
     assert response.status_code == 200
-    assert "Tellus AI Model Platform" in response.text
+    assert "Tellus FlowBuilder API" in response.text
+    assert "/flow-builder/demo" in response.text
     assert "X-API-Key" in response.text
+
+
+def test_flow_builder_demo_page_is_public() -> None:
+    response = client.get("/flow-builder/demo")
+
+    assert response.status_code == 200
+    assert "Tellus FlowBuilder Demo" in response.text
+    assert "Consumer Checking Account Onboarding" in response.text
+    assert "No API keys in browser code" in response.text
 
 
 def test_favicon_is_public() -> None:
     response = client.get("/favicon.ico")
 
     assert response.status_code == 204
+
+
+def test_flow_builder_templates_still_requires_api_key() -> None:
+    response = client.get("/flow-builder/templates")
+
+    assert response.status_code == 401
 
 
 def test_models_requires_api_key() -> None:
