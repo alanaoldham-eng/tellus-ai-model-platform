@@ -37,6 +37,12 @@ The MVP uses SQLite through `TELLUS_AI_FLOW_STORE_PATH`, defaulting to
 Compose. For Vercel or serverless runtime, set the path to writable runtime storage or replace the
 repository with managed Postgres before production.
 
+On Vercel, the deployment bundle at `/var/task` is read-only. FlowBuilder automatically maps
+relative SQLite paths to the runtime temp directory so the FastAPI app can import and run. That
+temp storage is not durable persistence. Use it only for demos and API-contract checks, or set
+`TELLUS_AI_RUNTIME_WRITABLE_DIR` to an approved writable runtime path. Production banking
+modernization deployments should use managed durable storage.
+
 ## Tenant-Scoped Access
 
 FlowBuilder supports tenant-aware API access:

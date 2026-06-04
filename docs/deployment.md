@@ -64,7 +64,8 @@ GGUF files must stay outside Git.
 - Rotate `TELLUS_AI_API_KEY`.
 - Disable prompt logging unless an approved privacy review allows it.
 - Store model weights in external volumes.
+- Use managed durable storage for FlowBuilder in production. Vercel serverless `/tmp` support is
+  runtime-writable but ephemeral and should not be treated as a production flow store.
 - Pin upstream model revisions.
 - Preserve upstream `LICENSE`, `NOTICE`, `README`, and model cards beside deployed artifacts.
 - Add per-tenant rate limits and audit exports before public product traffic.
-
