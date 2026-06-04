@@ -1,0 +1,7 @@
+Copyright © 2026 Tellus Digital, LLC. All rights reserved.
+
+This repository contains proprietary and confidential software owned by Tellus Digital, LLC.
+
+No license is granted to copy, modify, distribute, sublicense, or use this software except as expressly authorized in writing by Tellus Digital, LLC.
+
+Third-party open-source components, model artifacts, libraries, or dependencies included or referenced by this repository remain governed by their own license terms, which may be documented in LICENSES/, dependency manifests, model cards, or upstream repositories.
