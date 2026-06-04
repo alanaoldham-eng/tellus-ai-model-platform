@@ -162,11 +162,11 @@ def flow_builder_demo_page() -> str:
           <section class="hero compact-hero">
             <div class="hero-copy">
               <p class="eyebrow">Banking Modernization Demo</p>
-              <h1>Portable onboarding workflows, ready for Tellus frontends.</h1>
+              <h1>Build a demo workflow from a prompt.</h1>
               <p class="hero-text">
-                These starter flows show the schema contract that Tellus frontends can render:
-                steps, fields, conditional rules, connector placeholders, review controls, and
-                compliance notes.
+                Type a banking onboarding or origination request. The public demo will generate a
+                website-safe draft from Tellus FlowBuilder templates and show the resulting steps,
+                API placeholders, compliance signals, and JSON contract.
               </p>
               <div class="hero-actions" aria-label="Demo actions">
                 <a class="button button-primary" href="/docs">Open Interactive API Docs</a>
@@ -182,6 +182,70 @@ def flow_builder_demo_page() -> str:
                 <li>Human approval before publish</li>
               </ul>
             </aside>
+          </section>
+
+          <section class="section demo-workbench" aria-labelledby="interactive-demo-title">
+            <div class="section-heading">
+              <p class="eyebrow">Interactive Demo</p>
+              <h2 id="interactive-demo-title">Describe a flow. Review the generated draft.</h2>
+              <p>
+                This demo is intentionally mock-only. It does not call a live model, store your
+                prompt, publish flows, or expose the protected Tellus API key. Production generation
+                still happens through <code>POST /flow-builder/generate</code>.
+              </p>
+            </div>
+
+            <div class="workbench-grid">
+              <form class="demo-form" id="demo-form">
+                <label for="demo-prompt">Workflow prompt</label>
+                <textarea id="demo-prompt" name="prompt" rows="9" maxlength="2000">Create a consumer checking account onboarding flow. Ask for identity, address, contact details, employment, funding source, disclosures, and upload ID. If the customer is under 18, route to manual review. Connect to our KYC API before final submission.</textarea>
+
+                <label for="target-flow-type">Target flow type</label>
+                <select id="target-flow-type" name="target_flow_type">
+                  <option value="">Auto-select from prompt</option>
+                  <option value="consumer_deposit_account_opening">Consumer deposit account opening</option>
+                  <option value="small_business_deposit_account_opening">Small business deposit onboarding</option>
+                  <option value="loan_prequalification">Loan prequalification</option>
+                </select>
+
+                <div class="prompt-examples" aria-label="Example prompts">
+                  <button type="button" data-example="Create a small business deposit onboarding flow. Collect business information, entity details, EIN, authorized signer, beneficial owners for LLCs, expected account activity, formation documents, disclosures, KYB, OFAC, and manual review.">Small business onboarding</button>
+                  <button type="button" data-example="Create a loan prequalification flow. Ask for product selection, applicant information, income, housing, requested amount, credit consent, and connect to a soft-pull credit bureau placeholder. Include adverse action review notes.">Loan prequalification</button>
+                  <button type="button" data-example="Create a consumer checking account flow with identity, address, contact details, employment, funding source, disclosures, document upload, KYC check, and manual review for minors.">Consumer checking</button>
+                </div>
+
+                <button class="button button-primary" type="submit">Generate Demo Draft</button>
+                <p class="form-note">
+                  Demo output is draft-only and must be reviewed before any production use.
+                </p>
+              </form>
+
+              <div class="demo-results" aria-live="polite">
+                <div class="status-line" id="demo-status">Ready for a prompt.</div>
+
+                <article class="result-panel">
+                  <p class="eyebrow">Generated Structure</p>
+                  <h3 id="result-title">No draft generated yet</h3>
+                  <p id="result-message">Use the form to generate a demo workflow.</p>
+                  <div class="metric-row compact-metrics" id="result-metrics"></div>
+                </article>
+
+                <article class="result-panel">
+                  <p class="eyebrow">Detected Signals</p>
+                  <div class="pill-row" id="detected-signals"></div>
+                </article>
+
+                <article class="result-panel">
+                  <p class="eyebrow">Step Preview</p>
+                  <ol class="step-list" id="generated-steps"></ol>
+                </article>
+
+                <article class="result-panel">
+                  <p class="eyebrow">Review Items</p>
+                  <ul class="risk-list" id="generated-risks"></ul>
+                </article>
+              </div>
+            </div>
           </section>
 
           <section class="section">
@@ -214,6 +278,7 @@ POST /flow-builder/simulate  protected API endpoint</code></pre>
           <span>Tellus Digital, LLC</span>
           <span>FlowBuilder for banking modernization products</span>
         </footer>
+        {_demo_script()}
       </body>
     </html>
     """
@@ -278,6 +343,138 @@ def _endpoint_card(method: str, path: str, description: str) -> str:
         </article>
         """
     )
+
+
+def _demo_script() -> str:
+    return """
+        <script>
+          const form = document.querySelector("#demo-form");
+          const promptInput = document.querySelector("#demo-prompt");
+          const flowTypeInput = document.querySelector("#target-flow-type");
+          const statusLine = document.querySelector("#demo-status");
+          const title = document.querySelector("#result-title");
+          const message = document.querySelector("#result-message");
+          const metrics = document.querySelector("#result-metrics");
+          const signals = document.querySelector("#detected-signals");
+          const steps = document.querySelector("#generated-steps");
+          const risks = document.querySelector("#generated-risks");
+
+          function setStatus(text, isError = false) {
+            statusLine.textContent = text;
+            statusLine.classList.toggle("error", isError);
+          }
+
+          function clearNode(node) {
+            while (node.firstChild) {
+              node.removeChild(node.firstChild);
+            }
+          }
+
+          function appendMetric(label, value) {
+            const item = document.createElement("span");
+            const strong = document.createElement("strong");
+            strong.textContent = value;
+            item.appendChild(strong);
+            item.appendChild(document.createTextNode(label));
+            metrics.appendChild(item);
+          }
+
+          function renderPills(node, items) {
+            clearNode(node);
+            items.forEach((item) => {
+              const pill = document.createElement("span");
+              pill.textContent = item.replaceAll("_", " ");
+              node.appendChild(pill);
+            });
+          }
+
+          function renderRisks(items) {
+            clearNode(risks);
+            items.slice(0, 8).forEach((item) => {
+              const risk = document.createElement("li");
+              risk.textContent = item.replaceAll("_", " ");
+              risks.appendChild(risk);
+            });
+          }
+
+          function renderSteps(flow) {
+            clearNode(steps);
+            flow.steps.slice(0, 8).forEach((step) => {
+              const item = document.createElement("li");
+              const badge = document.createElement("span");
+              badge.textContent = step.order;
+              item.appendChild(badge);
+              item.appendChild(
+                document.createTextNode(`${step.title} (${step.fields.length} fields)`)
+              );
+              steps.appendChild(item);
+            });
+            if (flow.steps.length > 8) {
+              const item = document.createElement("li");
+              const badge = document.createElement("span");
+              badge.textContent = "+";
+              item.appendChild(badge);
+              item.appendChild(document.createTextNode(`${flow.steps.length - 8} additional steps`));
+              steps.appendChild(item);
+            }
+          }
+
+          function renderResult(data) {
+            clearNode(metrics);
+            if (data.blocked) {
+              title.textContent = "Demo request blocked";
+              message.textContent = data.message;
+              renderPills(signals, data.safety_flags || []);
+              clearNode(steps);
+              renderRisks(data.safety_flags || []);
+              setStatus("Safety review required before a flow can be generated.", true);
+              return;
+            }
+
+            title.textContent = data.selected_template.name;
+            message.textContent = data.message + " " + data.selected_template.reason;
+            appendMetric(" steps", data.summary.step_count);
+            appendMetric(" fields", data.summary.field_count);
+            appendMetric(" connectors", data.summary.connector_count);
+            appendMetric(" sensitive fields", data.summary.sensitive_field_count);
+            renderPills(signals, data.interpreted_request.detected_workflow_signals);
+            renderSteps(data.flow_json);
+            renderRisks(data.risk_flags);
+            setStatus("Demo draft generated. Review the structure before using protected APIs.");
+          }
+
+          document.querySelectorAll("[data-example]").forEach((button) => {
+            button.addEventListener("click", () => {
+              promptInput.value = button.dataset.example;
+              promptInput.focus();
+            });
+          });
+
+          form.addEventListener("submit", async (event) => {
+            event.preventDefault();
+            setStatus("Generating demo draft...");
+            try {
+              const response = await fetch("/flow-builder/demo/generate", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  prompt: promptInput.value,
+                  target_flow_type: flowTypeInput.value || null,
+                }),
+              });
+              if (!response.ok) {
+                throw new Error(`Demo endpoint returned ${response.status}`);
+              }
+              renderResult(await response.json());
+            } catch (error) {
+              setStatus(
+                "The demo could not generate a draft. Refresh and try again, or open API docs.",
+                true
+              );
+            }
+          });
+        </script>
+    """
 
 
 def _front_end_styles() -> str:
@@ -506,7 +703,9 @@ def _front_end_styles() -> str:
           .hero-panel,
           .endpoint-card,
           .template-card,
-          .intro-grid article {
+          .intro-grid article,
+          .demo-form,
+          .result-panel {
             border: 1px solid var(--line);
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.88);
@@ -578,7 +777,8 @@ def _front_end_styles() -> str:
           .endpoint-grid,
           .template-grid,
           .template-details,
-          .metric-row {
+          .metric-row,
+          .workbench-grid {
             display: grid;
             gap: 18px;
           }
@@ -589,7 +789,9 @@ def _front_end_styles() -> str:
 
           .intro-grid article,
           .endpoint-card,
-          .template-card {
+          .template-card,
+          .demo-form,
+          .result-panel {
             padding: 22px;
           }
 
@@ -625,6 +827,98 @@ def _front_end_styles() -> str:
 
           .template-grid {
             grid-template-columns: 1fr;
+          }
+
+          .demo-workbench {
+            border-top: 1px solid var(--line);
+            border-bottom: 1px solid var(--line);
+          }
+
+          .workbench-grid {
+            grid-template-columns: minmax(320px, 0.86fr) minmax(0, 1.14fr);
+            align-items: start;
+          }
+
+          .demo-form {
+            display: grid;
+            gap: 14px;
+            background: var(--panel);
+          }
+
+          .demo-form label {
+            color: var(--ink);
+            font-size: 0.9rem;
+            font-weight: 800;
+          }
+
+          .demo-form textarea,
+          .demo-form select {
+            width: 100%;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #fbfdfb;
+            color: var(--ink);
+            font: inherit;
+            padding: 13px;
+          }
+
+          .demo-form textarea {
+            min-height: 210px;
+            resize: vertical;
+          }
+
+          .prompt-examples,
+          .pill-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+          }
+
+          .prompt-examples button,
+          .pill-row span {
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            background: #eef4f0;
+            color: var(--accent-strong);
+            font: inherit;
+            font-size: 0.86rem;
+            font-weight: 750;
+            padding: 8px 10px;
+          }
+
+          .prompt-examples button {
+            cursor: pointer;
+          }
+
+          .form-note {
+            margin: 0;
+            color: var(--muted);
+            font-size: 0.92rem;
+          }
+
+          .demo-results {
+            display: grid;
+            gap: 14px;
+          }
+
+          .status-line {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: #eef4f0;
+            color: var(--accent-strong);
+            font-weight: 750;
+            padding: 12px 14px;
+          }
+
+          .status-line.error {
+            border-color: #e3b8b8;
+            background: #fff1f1;
+            color: #8a2929;
+          }
+
+          .compact-metrics {
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            margin-bottom: 0;
           }
 
           .template-card {
@@ -690,7 +984,8 @@ def _front_end_styles() -> str:
             .intro-grid,
             .endpoint-grid,
             .code-band,
-            .template-details {
+            .template-details,
+            .workbench-grid {
               grid-template-columns: 1fr;
             }
 

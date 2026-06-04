@@ -17,6 +17,7 @@ class APIKeyMiddleware(BaseHTTPMiddleware):
         self.exempt_paths = {
             "/",
             "/flow-builder/demo",
+            "/flow-builder/demo/generate",
             "/health",
             "/docs",
             "/openapi.json",

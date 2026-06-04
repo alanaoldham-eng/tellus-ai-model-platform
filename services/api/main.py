@@ -4,6 +4,10 @@ from fastapi.responses import HTMLResponse
 
 from services.api.core.config import get_settings
 from services.api.core.logging import RequestLoggingMiddleware, configure_logging
+from services.api.core.public_demo import (
+    FlowBuilderDemoGenerateRequest,
+    build_flow_builder_demo,
+)
 from services.api.core.public_pages import flow_builder_demo_page, landing_page
 from services.api.core.security import APIKeyMiddleware
 from services.api.routes import chat, code_agent, flow_builder, health, models
@@ -36,6 +40,11 @@ async def root() -> str:
 @app.get("/flow-builder/demo", response_class=HTMLResponse, include_in_schema=False)
 async def flow_builder_demo() -> str:
     return flow_builder_demo_page()
+
+
+@app.post("/flow-builder/demo/generate", include_in_schema=False)
+async def flow_builder_demo_generate(request: FlowBuilderDemoGenerateRequest) -> dict:
+    return build_flow_builder_demo(request)
 
 
 @app.get("/favicon.ico", include_in_schema=False)

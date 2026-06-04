@@ -35,8 +35,30 @@ def test_flow_builder_demo_page_is_public() -> None:
 
     assert response.status_code == 200
     assert "Tellus FlowBuilder Demo" in response.text
+    assert "demo-form" in response.text
+    assert "Generate Demo Draft" in response.text
     assert "Consumer Checking Account Onboarding" in response.text
     assert "No API keys in browser code" in response.text
+
+
+def test_flow_builder_public_demo_generate_is_mock_only() -> None:
+    response = client.post(
+        "/flow-builder/demo/generate",
+        json={
+            "prompt": (
+                "Create a small business onboarding flow with KYB, beneficial owners, "
+                "documents, disclosures, OFAC, and manual review."
+            )
+        },
+    )
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["mode"] == "mock_public_demo"
+    assert body["blocked"] is False
+    assert body["selected_template"]["flow_type"] == "small_business_deposit_account_opening"
+    assert body["flow_json"]["status"] == "draft"
+    assert "secret/tellus" not in response.text
 
 
 def test_favicon_is_public() -> None:
