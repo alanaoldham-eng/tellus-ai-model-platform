@@ -42,7 +42,7 @@ def test_flow_builder_demo_page_is_public() -> None:
     assert "No API keys in browser code" in response.text
 
 
-def test_flow_builder_public_demo_generate_is_mock_only() -> None:
+def test_flow_builder_public_demo_generate_is_server_side_demo() -> None:
     response = client.post(
         "/flow-builder/demo/generate",
         json={
@@ -59,8 +59,10 @@ def test_flow_builder_public_demo_generate_is_mock_only() -> None:
 
     assert response.status_code == 200
     body = response.json()
-    assert body["mode"] == "mock_public_demo"
+    assert body["mode"] == "public_model_demo"
     assert body["blocked"] is False
+    assert body["generation_metadata"]["model_calls_enabled"] is False
+    assert body["generation_metadata"]["fallback_reason"] == "public_model_demo_disabled"
     assert body["selected_template"]["flow_type"] == "small_business_deposit_account_opening"
     assert body["flow_json"]["name"] == "Demo Draft: Demo small business flow"
     assert body["flow_json"]["status"] == "draft"

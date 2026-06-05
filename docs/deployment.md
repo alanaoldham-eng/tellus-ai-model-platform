@@ -39,6 +39,10 @@ TELLUS_AI_OLLAMA_CODER_MODEL=qwen3-coder-next
 
 ## vLLM Backend
 
+For Vercel production, host vLLM on a separate GPU inference service and point this API at its
+OpenAI-compatible `/v1` endpoint. See [Qwen vLLM Inference Server Setup](qwen-vllm-inference-server.md)
+for the RunPod Serverless path, GPU VM alternative, and test commands.
+
 ```env
 TELLUS_AI_INFERENCE_BACKEND=vllm
 TELLUS_AI_VLLM_BASE_URL=http://localhost:8001/v1

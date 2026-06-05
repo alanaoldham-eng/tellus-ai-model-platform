@@ -97,7 +97,8 @@ TELLUS_AI_OLLAMA_CODER_MODEL=qwen3-coder-next
 
 ## vLLM Configuration
 
-Run vLLM separately with model storage outside Git:
+Run vLLM separately with model storage outside Git. For the public FlowBuilder demo on Vercel,
+use a separate GPU inference endpoint; see [docs/qwen-vllm-inference-server.md](docs/qwen-vllm-inference-server.md).
 
 ```powershell
 docker compose --profile vllm up vllm

@@ -55,6 +55,22 @@ class Settings(BaseSettings):
         default=False,
         validation_alias="TELLUS_AI_ENABLE_PROMPT_LOGGING",
     )
+    enable_public_model_demo: bool = Field(
+        default=False,
+        validation_alias="TELLUS_AI_ENABLE_PUBLIC_MODEL_DEMO",
+    )
+    public_demo_rate_limit_per_minute: int = Field(
+        default=6,
+        validation_alias="TELLUS_AI_PUBLIC_DEMO_RATE_LIMIT_PER_MINUTE",
+    )
+    public_demo_max_prompt_chars: int = Field(
+        default=1200,
+        validation_alias="TELLUS_AI_PUBLIC_DEMO_MAX_PROMPT_CHARS",
+    )
+    public_demo_allowed_origins: Annotated[list[str], NoDecode] = Field(
+        default_factory=list,
+        validation_alias="TELLUS_AI_PUBLIC_DEMO_ALLOWED_ORIGINS",
+    )
     mock_fallback_enabled: bool = Field(
         default=True,
         validation_alias="TELLUS_AI_MOCK_FALLBACK_ENABLED",
@@ -121,6 +137,13 @@ class Settings(BaseSettings):
     @field_validator("allowed_origins", mode="before")
     @classmethod
     def parse_allowed_origins(cls, value: str | list[str]) -> list[str]:
+        if isinstance(value, str):
+            return [origin.strip() for origin in value.split(",") if origin.strip()]
+        return value
+
+    @field_validator("public_demo_allowed_origins", mode="before")
+    @classmethod
+    def parse_public_demo_allowed_origins(cls, value: str | list[str]) -> list[str]:
         if isinstance(value, str):
             return [origin.strip() for origin in value.split(",") if origin.strip()]
         return value

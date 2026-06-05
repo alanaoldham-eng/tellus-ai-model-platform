@@ -176,6 +176,7 @@ def flow_builder_demo_page() -> str:
             <aside class="hero-panel">
               <div class="panel-label">Demo safety posture</div>
               <ul class="check-list">
+                <li>Server-side model calls only</li>
                 <li>No API keys in browser code</li>
                 <li>No real vendor credentials</li>
                 <li>Draft-only AI generation</li>
@@ -189,9 +190,10 @@ def flow_builder_demo_page() -> str:
               <p class="eyebrow">Interactive Demo</p>
               <h2 id="interactive-demo-title">Describe a flow. Review the generated draft.</h2>
               <p>
-                This demo is intentionally mock-only. It does not call a live model, store your
-                prompt, publish flows, or expose the protected Tellus API key. Production generation
-                still happens through <code>POST /flow-builder/generate</code>.
+                The browser calls a public demo endpoint. That endpoint performs validation,
+                rate limiting, and safety checks, then calls the configured model server-side when
+                public model demo mode is enabled. Keys and model credentials never reach the
+                browser.
               </p>
             </div>
 
@@ -383,14 +385,15 @@ def flow_builder_demo_page() -> str:
               <p class="eyebrow">Website Integration Pattern</p>
               <h2>Use a server route for live demos.</h2>
               <p>
-                For public website demos, call protected FlowBuilder APIs from a server-side route
-                and return sanitized output to the browser. Never place the API key in front-end
-                JavaScript.
+                Public website demos call a guarded server-side demo route. Production FlowBuilder
+                APIs remain protected by API key, while the demo route can call the model backend
+                with rate limits, prompt limits, safety checks, and sanitized output.
               </p>
             </div>
             <pre><code>GET /flow-builder/demo       public documentation page
-GET /flow-builder/templates  protected API endpoint
-POST /flow-builder/simulate  protected API endpoint</code></pre>
+POST /flow-builder/demo/generate  public guarded model demo
+POST /flow-builder/demo/simulate  public guarded simulator
+POST /flow-builder/generate       protected production API</code></pre>
           </section>
         </main>
 
@@ -574,7 +577,12 @@ def _demo_script() -> str:
             renderSteps(data.flow_json);
             renderRisks(data.risk_flags);
             jsonPreview.textContent = JSON.stringify(data.flow_json, null, 2);
-            setStatus("Demo draft generated. Review the structure before using protected APIs.");
+            const metadata = data.generation_metadata || {};
+            if (metadata.model_plan_used) {
+              setStatus(`Live model draft generated on ${metadata.backend}. Test it below.`);
+            } else {
+              setStatus(`Template fallback draft generated: ${metadata.fallback_reason || "model not used"}.`);
+            }
           }
 
           function collectBuilderOptions() {
